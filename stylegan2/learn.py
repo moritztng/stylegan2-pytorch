@@ -6,6 +6,7 @@ from torchvision.datasets import ImageFolder
 from torchvision.transforms import Resize, RandomHorizontalFlip, ToTensor, Normalize, Compose
 from itertools import islice
 from .networks import Discriminator, Generator
+from .view import View
 from .utils import set_requires_grad
 
 class StyleGAN():
@@ -29,6 +30,7 @@ class StyleGAN():
         self.batch = 0
         self.mean_loss_d = [0] 
         self.mean_loss_g = [0]
+        self.view = View()
 
         if path_checkpoint_init:
             checkpoint = torch.load(path_checkpoint_init)
@@ -88,7 +90,7 @@ class StyleGAN():
                 if (batch + 1) % n_batch_log == 0:
                     self.mean_loss_d[-1] /= n_batch_log
                     self.mean_loss_g[-1] /= n_batch_log
-                    print(f'epoch {epoch} batch {batch+1}/{len(dataloader)} mean loss discriminator {self.mean_loss_d[-1]:.3f} generator {self.mean_loss_g[-1]:.3f}')
+                    self.view(epoch, batch + 1, self.mean_loss_d, self.mean_loss_g, images_fake.detach() * 0.5 + 0.5)
                     self.mean_loss_d.append(0)
                     self.mean_loss_g.append(0)
                     

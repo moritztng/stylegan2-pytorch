@@ -1,0 +1,41 @@
+<h1>epoch {{epoch}} batch {{batch}}</h1>
+<div>
+  <canvas id="meanLoss"></canvas>
+</div>
+<img src="images.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const meanLossChart = new Chart(
+    document.getElementById('meanLoss'),
+    {
+      type: 'line',
+      data: {
+        labels: {{ labels }},
+        datasets: [
+          {
+            label: 'discriminator',
+            backgroundColor: 'rgb(255, 0, 0)',
+            borderColor: 'rgb(255, 0, 0)',
+            data: {{ mean_loss_d }}
+          },
+          {
+            label: 'generator',
+            backgroundColor: 'rgb(0, 0, 255)',
+            borderColor: 'rgb(0, 0, 255)',
+            data: {{ mean_loss_g }}
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'mean loss'
+            }
+          }
+        }
+      }
+    }
+  );
+</script>
