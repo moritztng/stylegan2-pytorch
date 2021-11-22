@@ -7,7 +7,7 @@ from torchvision.transforms import Resize, RandomHorizontalFlip, ToTensor, Norma
 from itertools import islice
 from .networks import Discriminator, Generator
 from .view import View
-from .utils import set_requires_grad
+from .utils import download_ffhq, set_requires_grad
 
 class StyleGAN():
     def __init__(self, lr=0.001, scale_lr_mapper=0.01, equal_lr=True, betas=(0, 0.99), scale_r1=10, resolution=1024,
@@ -17,7 +17,7 @@ class StyleGAN():
                                    'n_dim_mapper': 512, 
                                    'n_conv_blocks': 2,
                                    'n_dim_const': 4},
-                 path_checkpoint_init=None, device=None):
+                 path_checkpoint_init=None, path_ffhq=None, device=None):
         self.scale_r1 = scale_r1
         self.resolution = resolution
         self.n_dim_z = params_generator['n_dim_mapper']
@@ -42,6 +42,9 @@ class StyleGAN():
             self.batch = checkpoint['batch'] + 1
             self.mean_loss_d = checkpoint['mean_loss_d']
             self.mean_loss_g = checkpoint['mean_loss_g']
+        
+        if path_ffhq:
+            download_ffhq(path_ffhq)
 
     def __call__(self, data, n_epochs, batch_size=16, n_batch_log=100, n_log_checkpoint=None, path_checkpoint_save='checkpoint.pth'):
         dataset = ImageFolder(data, transform=Compose([Resize(self.resolution), RandomHorizontalFlip(), ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]))
