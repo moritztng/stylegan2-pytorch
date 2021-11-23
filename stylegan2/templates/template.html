@@ -1,11 +1,38 @@
-<h1>epoch {{epoch}} batch {{batch}}</h1>
-<div>
+<style>
+  * {
+    text-align:center;
+  }
+  .canvasContainer {
+    position: relative;
+    width: 1000px;
+    max-width: 80%;
+    margin: 0 auto;
+  }
+</style>
+
+<h1>epoch {{ epoch }} batch {{ batch }}</h1>
+<h1>mean loss</h1> 
+<div class="canvasContainer">
   <canvas id="meanLoss"></canvas>
 </div>
-<img src="images.png">
+<h1>mean absolute gradients</h1>
+<h2>discriminator</h2> 
+<div class="canvasContainer">
+  <canvas id="meanAbsGradDiscriminator"></canvas>
+</div>
+<h2>generator</h2> 
+<div class="canvasContainer">
+  <canvas id="meanAbsGradGenerator"></canvas>
+</div>
+<h1>images</h1>
+<h2>fake</h2> 
+<img src="images_fake.png">
+<h2>real</h2>
+<img src="images_real.png">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const meanLossChart = new Chart(
+  new Chart(
     document.getElementById('meanLoss'),
     {
       type: 'line',
@@ -26,16 +53,41 @@
           }
         ]
       },
-      options: {
-        scales: {
-          y: {
-            title: {
-              display: true,
-              text: 'mean loss'
-            }
-          }
-        }
-      }
+      options: {}
+    }
+  );
+
+  const meanAbsGradDiscriminator = {{ mean_abs_grad_d|replace("'", "") }};
+  const datasetsDiscriminator = [];
+  Object.entries(meanAbsGradDiscriminator).forEach(([name, meanAbsGrad]) => {
+    datasetsDiscriminator.push({label: name, data: meanAbsGrad});
+  });
+  new Chart(
+    document.getElementById('meanAbsGradDiscriminator'),
+    {
+      type: 'line',
+      data: {
+        labels: {{ labels }},
+        datasets: datasetsDiscriminator
+      },
+      options: {}
+    }
+  );
+
+  const meanAbsGradGenerator = {{ mean_abs_grad_g|replace("'", "") }};
+  const datasetsGenerator = [];
+  Object.entries(meanAbsGradGenerator).forEach(([name, meanAbsGrad]) => {
+    datasetsGenerator.push({label: name, data: meanAbsGrad});
+  });
+  new Chart(
+    document.getElementById('meanAbsGradGenerator'),
+    {
+      type: 'line',
+      data: {
+        labels: {{ labels }},
+        datasets: datasetsGenerator
+      },
+      options: {}
     }
   );
 </script>
