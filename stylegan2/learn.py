@@ -26,11 +26,9 @@ class StyleGAN():
         self.generator = Generator(params_generator['n_layers_mapper'], params_generator['n_dim_mapper'], params_generator['n_conv_blocks'], n_feature_maps, params_generator['n_dim_const'], equal_lr).to(self.device)
         self.optimizer_d = Adam(self.discriminator.parameters(), lr=lr, betas=betas)
         self.optimizer_g = Adam([{'params': self.generator.mapper.parameters(), 'lr': scale_lr_mapper * lr}, {'params': self.generator.synthesizer.parameters(), 'lr': lr}], betas=betas)
+        self.view = View()
         self.epoch = 0
         self.batch = 0
-        self.mean_loss_d = [0] 
-        self.mean_loss_g = [0]
-        self.view = View()
 
         if path_checkpoint_init:
             checkpoint = torch.load(path_checkpoint_init)
@@ -38,10 +36,9 @@ class StyleGAN():
             self.generator.load_state_dict(checkpoint['state_dict_g'])
             self.optimizer_d.load_state_dict(checkpoint['state_dict_optim_d'])
             self.optimizer_g.load_state_dict(checkpoint['state_dict_optim_g'])
+            self.view.load_state_dict(checkpoint['state_dict_view'])
             self.epoch = checkpoint['epoch']
             self.batch = checkpoint['batch'] + 1
-            self.mean_loss_d = checkpoint['mean_loss_d']
-            self.mean_loss_g = checkpoint['mean_loss_g']
         
         if path_ffhq:
             download_ffhq(path_ffhq)
@@ -52,6 +49,8 @@ class StyleGAN():
         
         for epoch in range(self.epoch, self.epoch + n_epochs):
             self.epoch = epoch
+            sum_loss_d = 0
+            sum_loss_g = 0   
             for batch, (images_real, _) in enumerate(islice(dataloader, self.batch, None), self.batch):
                 self.batch = batch
 
@@ -75,7 +74,7 @@ class StyleGAN():
                 
                 self.optimizer_d.step()
 
-                self.mean_loss_d[-1] += (loss_d_real.item() + loss_d_fake.item()) / 2
+                sum_loss_d += (loss_d_real.item() + loss_d_fake.item()) / 2
 
                 self.optimizer_g.zero_grad()
                 
@@ -88,25 +87,20 @@ class StyleGAN():
 
                 self.optimizer_g.step()
 
-                self.mean_loss_g[-1] += loss_g.item()
+                sum_loss_g += loss_g.item()
                 
                 if (batch + 1) % n_batch_log == 0:
-                    self.mean_loss_d[-1] /= n_batch_log
-                    self.mean_loss_g[-1] /= n_batch_log
-                    self.view(epoch, batch + 1, self.mean_loss_d, self.mean_loss_g, images_real.detach() * 0.5 + 0.5, images_fake.detach() * 0.5 + 0.5, self.discriminator, self.generator)
-                    self.mean_loss_d.append(0)
-                    self.mean_loss_g.append(0)
+                    self.view(epoch, batch + 1, sum_loss_d / n_batch_log, sum_loss_g / n_batch_log, images_real.detach() * 0.5 + 0.5, images_fake.detach() * 0.5 + 0.5, self.discriminator, self.generator)
+                    sum_loss_d = 0
+                    sum_loss_g = 0
                     
                     if n_log_checkpoint and (batch + 1) % (n_log_checkpoint * n_batch_log) == 0:
                         torch.save({'state_dict_d': self.discriminator.state_dict(),
                                     'state_dict_g': self.generator.state_dict(),
                                     'state_dict_optim_d': self.optimizer_d.state_dict(),
                                     'state_dict_optim_g': self.optimizer_g.state_dict(),
+                                    'state_dict_view': self.view.state_dict(),
                                     'epoch': epoch,
-                                    'batch': batch,
-                                    'mean_loss_d': self.mean_loss_d,
-                                    'mean_loss_g': self.mean_loss_g}, path_checkpoint_save)
+                                    'batch': batch}, path_checkpoint_save)
             
             self.batch = 0
-            self.mean_loss_d[-1] = 0
-            self.mean_loss_g[-1] = 0
