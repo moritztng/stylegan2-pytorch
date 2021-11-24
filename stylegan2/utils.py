@@ -5,6 +5,7 @@ from gdown import download
 from zipfile import ZipFile
 
 def download_ffhq(path):
+    path = join(path, 'ffhq')
     if not isdir(path):
         Path(path).mkdir(parents=True, exist_ok=True)
         path_zip = join(path, 'ffhq.zip')
