@@ -65,7 +65,12 @@ class Synthesizer(nn.Module):
         for i, n in enumerate(n_feature_maps[1:]):
             self.blocks.append(SynthesizerBlock(n_conv_blocks, False, n_dim_w, n, equal_lr, n_feature_maps_in=n_feature_maps[i]))
         self.blocks = nn.Sequential(*self.blocks)
-    def forward(self, w):
+        self.register_buffer('avg_w', torch.zeros(n_dim_w))
+    def forward(self, w, weight_truncation=None):
+        if self.training:
+            self.avg_w.copy_(w.detach().mean(dim=0).lerp(self.avg_w, 0.995))
+        if weight_truncation:
+            w = self.avg_w.lerp(w, weight_truncation)
         return self.blocks((w, None, None))[2]
 
 class SynthesizerBlock(nn.Module):
