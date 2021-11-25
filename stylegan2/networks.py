@@ -37,9 +37,9 @@ class Generator(nn.Module):
         super().__init__()
         self.mapper = Mapper(n_layers_mapper, n_dim_mapper, equal_lr)
         self.synthesizer = Synthesizer(n_dim_mapper, n_conv_blocks, n_feature_maps, n_dim_const, equal_lr)
-    def forward(self, z):
+    def forward(self, z, weight_truncation=None):
         w = self.mapper(z)
-        return self.synthesizer(w)
+        return self.synthesizer(w, weight_truncation=weight_truncation)
 
 class Mapper(nn.Module):
     def __init__(self, n_layers, n_dim, equal_lr):
