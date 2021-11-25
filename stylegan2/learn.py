@@ -11,8 +11,8 @@ from .view import View
 from .utils import download_ffhq, set_requires_grad
 
 class StyleGAN():
-    def __init__(self, lr=0.001, scale_lr_mapper=0.01, equal_lr=True, betas=(0, 0.99), scale_r1=10, resolution=1024,
-                 n_feature_maps=[512, 512, 512, 512, 512, 256, 128, 64, 32],
+    def __init__(self, lr=0.001, scale_lr_mapper=0.01, equal_lr=True, betas=(0, 0.99), scale_r1=10, resolution=128,
+                 n_feature_maps=[512, 512, 512, 512, 512, 256],
                  params_discriminator={'n_conv': 2},
                  params_generator={'n_layers_mapper': 8,
                                    'n_dim_mapper': 512, 
@@ -47,7 +47,7 @@ class StyleGAN():
         if path_ffhq:
             download_ffhq(path_ffhq)
 
-    def __call__(self, data, n_epochs, batch_size=16, n_batch_log=100, n_log_checkpoint=None, path_checkpoint_save='checkpoint.pth'):
+    def __call__(self, data, n_epochs=1, batch_size=16, n_batch_log=100, n_log_checkpoint=None, path_checkpoint_save='checkpoint.pth'):
         dataset = ImageFolder(data, transform=Compose([Resize(self.resolution), RandomHorizontalFlip(), ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]))
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         
