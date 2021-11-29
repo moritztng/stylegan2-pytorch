@@ -14,6 +14,7 @@ Loads checkpoint and creates `images.png`
 ```bash
 stylegan2 generate
 ```
+![images](images/images.jpg)
 
 ## Python Object
 ```python
@@ -82,6 +83,10 @@ Options:
   --device TEXT
   --help                      Show this message and exit.
 ```
+
+## Logs
+During training plots and images are visualized in `view.html`
+![loss](images/loss.png)
 
 ## References
 * [Analyzing and Improving the Image Quality of StyleGAN](https://arxiv.org/pdf/1912.04958.pdf)
