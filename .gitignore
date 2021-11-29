@@ -1,1 +1,6 @@
 *.pyc
+*.pth
+*.png
+*.jpg
+view.html
+!images/*
