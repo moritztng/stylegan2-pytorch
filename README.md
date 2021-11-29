@@ -86,7 +86,11 @@ Options:
 
 ## Logs
 During training plots and images are visualized in `view.html`
+
 ![loss](images/loss.png)
+
+## Pretrained Checkpoint
+This [checkpoint.pth](https://drive.google.com/file/d/1aqB2SNG6WaQJU6glyN0FsThP8nF1YT-a/view?usp=sharing) was trained on the 128x128 FFHQ Dataset for 9 epochs 
 
 ## References
 * [Analyzing and Improving the Image Quality of StyleGAN](https://arxiv.org/pdf/1912.04958.pdf)
