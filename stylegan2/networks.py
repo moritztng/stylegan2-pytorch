@@ -10,6 +10,7 @@ class Discriminator(nn.Module):
         self.conv_4 = Conv(n_feature_maps[-1], n_feature_maps[-1], 4, equal_lr=equal_lr)
         self.lrelu = nn.LeakyReLU(0.2)
         self.fc = FC(n_feature_maps[-1], 1, equal_lr=equal_lr)
+
     def forward(self, x):
         x = self.conv_rgb(x)
         x = self.blocks(x)
@@ -29,6 +30,7 @@ class DiscriminatorBlock(nn.Module):
         self.layers = nn.Sequential(*self.layers)
         self.downsample = lambda x: nn.functional.interpolate(x, scale_factor=0.5, mode='bilinear', align_corners=False)
         self.conv_res = Conv(n_feature_maps_in, n_feature_maps_out, 1, equal_lr=equal_lr)
+    
     def forward(self, x):
         return self.conv_res(self.downsample(x)) + self.downsample(self.layers(x))
 
@@ -37,6 +39,7 @@ class Generator(nn.Module):
         super().__init__()
         self.mapper = Mapper(n_layers_mapper, n_dim_mapper, equal_lr)
         self.synthesizer = Synthesizer(n_dim_mapper, n_conv_blocks, n_feature_maps, n_dim_const, equal_lr)
+    
     def forward(self, z, weight_truncation=None):
         w = self.mapper(z)
         return self.synthesizer(w, weight_truncation=weight_truncation)
@@ -49,12 +52,14 @@ class Mapper(nn.Module):
             self.layers.append(FC(n_dim, n_dim, equal_lr=equal_lr))
             self.layers.append(nn.LeakyReLU(0.2))
         self.layers = nn.Sequential(*self.layers)
+    
     def forward(self, z):
         return self.layers(z)
 
 class PixelNorm(nn.Module):
     def __init__(self):
         super().__init__()
+    
     def forward(self, z):
         return z / torch.sqrt(torch.mean(z ** 2, dim=1, keepdim=True) + 1e-8)
 
@@ -66,6 +71,7 @@ class Synthesizer(nn.Module):
             self.blocks.append(SynthesizerBlock(n_conv_blocks, False, n_dim_w, n, equal_lr, n_feature_maps_in=n_feature_maps[i]))
         self.blocks = nn.Sequential(*self.blocks)
         self.register_buffer('avg_w', torch.zeros(n_dim_w))
+    
     def forward(self, w, weight_truncation=None):
         if self.training:
             self.avg_w.copy_(w.detach().mean(dim=0).lerp(self.avg_w, 0.995))
@@ -88,6 +94,7 @@ class SynthesizerBlock(nn.Module):
         self.blocks = nn.Sequential(*self.blocks)
         self.conv_rgb = Conv(n_feature_maps_out, 3, 1, equal_lr=equal_lr)
         self.affine_transform = AffineTransform(n_dim_w, n_feature_maps_out, equal_lr)
+    
     def forward(self, args):
         w, x, rgb = args
         if self.first:
@@ -107,6 +114,7 @@ class ConvBlock(nn.Module):
         self.affine_transform = AffineTransform(n_dim_w, n_feature_maps_in, equal_lr)
         self.scale_noise = nn.Parameter(torch.tensor(0.))
         self.lrelu = nn.LeakyReLU(0.2)
+    
     def forward(self, args):
         w, x = args
         x = self.conv(x, y_s=self.affine_transform(w), demod=True) 
@@ -125,6 +133,7 @@ class Conv(nn.Module):
         self.scale_forward = norm_const if equal_lr else 1
         self.weight = nn.Parameter(scale_init * torch.randn(out_channels, in_channels, kernel_size, kernel_size))
         self.bias = nn.Parameter(torch.zeros(out_channels))
+    
     def forward(self, x, y_s=None, demod=False):
         weight = self.scale_forward * self.weight
         bias = self.bias
@@ -147,6 +156,7 @@ class AffineTransform(nn.Module):
         super().__init__()
         self.fc = FC(n_dim_w, n_feature_maps, equal_lr=equal_lr)
         nn.init.ones_(self.fc.bias)
+    
     def forward(self, w):
         return self.fc(w)
 
@@ -158,5 +168,6 @@ class FC(nn.Module):
         self.scale_forward = norm_const if equal_lr else 1 
         self.weight = nn.Parameter(scale_init * torch.randn(n_dim_out, n_dim_in))
         self.bias = nn.Parameter(torch.zeros(n_dim_out))
+    
     def forward(self, x):
         return nn.functional.linear(x, self.scale_forward * self.weight, bias=self.bias)
